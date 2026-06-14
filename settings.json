@@ -1,0 +1,18 @@
+{
+  "theme": "light",
+  "language": "ru",
+  "version": "4.5.0",
+  "features": {
+    "notifications": true,
+    "analytics": true,
+    "rate_limiting": true,
+    "dark_mode": true,
+    "group_management": true,
+    "calendar": true,
+    "group_content_assignment": true
+  },
+  "session_timeout": 3600,
+  "max_upload_size": 5242880,
+  "enable_notifications": true,
+  "calendar_enabled": true
+}

@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Учитель Онлайн V4.0.0</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+    :root{
+      --bg-light: #f4f6f9;
+      --fg-light: #222;
+      --card-light: #fff;
+      --bg-dark: #1a1f36;
+      --fg-dark: #e8eef7;
+      --card-dark: #252d48;
+      --input-bg-light: #fff;
+      --input-bg-dark: #1a2236;
+      --input-fg-light: #222;
+      --input-fg-dark: #d4dce9;
+      --input-border-light: #d1d5db;
+      --input-border-dark: #3a4556;
+      --primary: #0b5ea8;
+      --muted: #8b92a9;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #ea580c;
+    }
+    html,body{height:100%;margin:0;font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--fg)}
+    body.light-mode{--bg:var(--bg-light);--fg:var(--fg-light);--card:var(--card-light);--input-bg:var(--input-bg-light);--input-fg:var(--input-fg-light);--input-border:var(--input-border-light)}
+    body.dark-mode{--bg:var(--bg-dark);--fg:var(--fg-dark);--card:var(--card-dark);--input-bg:var(--input-bg-dark);--input-fg:var(--input-fg-dark);--input-border:var(--input-border-dark)}
+    .container{max-width:1200px;margin:20px auto;padding:16px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+    h1{margin:0;font-size:24px;font-weight:600;flex:1;min-width:200px}
+    .header-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .notification-bell{position:relative;cursor:pointer;font-size:20px}
+    .notification-badge{position:absolute;top:-8px;right:-8px;background:var(--danger);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold}
+    .card{background:var(--card);padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(11,94,168,0.08);margin-bottom:16px}
+    input,textarea,select,button{padding:10px 12px;border-radius:8px;border:1px solid var(--input-border);font-size:14px;background:var(--input-bg);color:var(--input-fg);font-family:inherit}
+    input,textarea,select{width:100%;margin-top:8px}
+    textarea{min-height:90px;resize:vertical}
+    .note-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+    .note-card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform 0.2s,box-shadow 0.2s;border:1px solid var(--input-border)}
+    .note-card:hover{transform:translateY(-4px);box-shadow:0 8px 16px rgba(11,94,168,0.15)}
+    .note-card h4{margin:0 0 8px 0;font-size:16px;font-weight:600;color:var(--primary)}
+    .note-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+    .note-meta{font-size:11px;color:var(--muted);margin-top:8px;display:flex;justify-content:space-between}
+    .btn{background:var(--primary);color:#fff;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:500;transition:background 0.2s,transform 0.1s;display:inline-block}
+    .btn:hover{background:#0a4a8a;transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .btn.ghost{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+    .btn.ghost:hover{background:rgba(11,94,168,0.1)}
+    .btn.danger{background:var(--danger);color:#fff}
+    .btn.danger:hover{background:#b91c1c}
+    .btn.success{background:var(--success);color:#fff}
+    .btn.success:hover{background:#15803d}
+    .btn.warning{background:var(--warning);color:#fff}
+    .btn.warning:hover{background:#ca4504}
+    .btn.block{display:block;width:100%}
+    .btn.small{padding:6px 12px;font-size:12px}
+    .small{font-size:12px;color:var(--muted);margin-top:6px}
+    footer{margin-top:20px;text-align:center;color:var(--muted);font-size:12px;padding:20px;border-top:1px solid var(--input-border)}
+    .btn-group{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+    .btn-group .btn{flex:1;min-width:100px}
+    .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+    .modal.active{display:flex}
+    .modal-container{background:var(--card);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:100%;max-width:600px;padding:32px;margin:20px auto;position:relative}
+    .close-btn{position:absolute;top:16px;right:16px;background:none;border:none;font-size:28px;cursor:pointer;color:var(--muted);padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+    .close-btn:hover{color:var(--fg)}
+    .progress-bar{width:100%;height:8px;background:var(--input-border);border-radius:4px;overflow:hidden;margin:12px 0}
+    .progress-fill{height:100%;background:var(--primary);transition:width 0.3s;border-radius:4px}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+    .stat-box{background:rgba(11,94,168,0.1);padding:16px;border-radius:8px;text-align:center;border-left:4px solid var(--primary)}
+    .stat-number{font-size:24px;font-weight:bold;color:var(--primary)}
+    .stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+    .notification-item{background:var(--input-bg);padding:12px;border-radius:8px;margin-bottom:8px;border-left:4px solid var(--primary);display:flex;justify-content:space-between;align-items:start;gap:12px}
+    .notification-item.unread{background:rgba(11,94,168,0.05);border-left-color:var(--warning)}
+    .notification-content{flex:1}
+    .notification-title{font-weight:600;color:var(--primary);font-size:13px}
+    .notification-message{font-size:12px;color:var(--muted);margin-top:4px}
+    .notification-time{font-size:11px;color:var(--muted)}
+    .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--input-border)}
+    .tab-btn{background:none;border:none;padding:12px 16px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s}
+    .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary)}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .badge{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px}
+    .badge-success{background:rgba(22,163,74,0.2);color:var(--success)}
+    .badge-warning{background:rgba(234,88,12,0.2);color:var(--warning)}
+    @media(max-width:720px){.note-grid{grid-template-columns:repeat(1,1fr)}.modal-container{padding:20px}.header-controls{flex-direction:column;width:100%}.stat-box{min-width:unset}}
+  </style>
+</head>
+<body class="light-mode">
+  <div class="container">
+    <header>
+      <h1>📚 Учитель Онлайн V4.0.0</h1>
+      <div class="header-controls">
+        <span id="versionBadge" class="badge badge-success">v4.0.0</span>
+        <div class="notification-bell" id="notificationBell" title="Уведомления">
+          🔔
+          <span class="notification-badge" id="notificationBadge" style="display:none">0</span>
+        </div>
+        <button id="themeToggle" class="btn ghost" title="Переключить тему">🌙</button>
+        <div id="userInfo" class="small"></div>
+      </div>
+    </header>
+
+    <!-- МОДАЛЬНОЕ ОКНО УВЕДОМЛЕНИЙ -->
+    <div id="notificationModal" class="modal">
+      <div class="modal-container">
+        <button class="close-btn" onclick="closeNotificationModal()">✕</button>
+        <h2>🔔 Уведомления</h2>
+        <div id="notificationsList"></div>
+      </div>
+    </div>
+
+    <!-- ЭКРАН ВХОДА -->
+    <div id="loginBox" class="card login">
+      <h3>🔐 Вход в систему</h3>
+      <input id="login" placeholder="Логин" autocomplete="username">
+      <input id="password" type="password" placeholder="Пароль" autocomplete="current-password">
+      <button id="loginBtn" class="btn block" style="margin-top:12px">Войти</button>
+      <div id="loginError" class="small" style="color:var(--danger)"></div>
+      <div style="margin-top:20px;padding:12px;background:rgba(0,0,0,0.05);border-radius:8px;font-size:12px">
+        <strong>Тестовые учетные данные:</strong><br>
+        Admin: admin / admin123<br>
+        Ученик: ivan / ivanpass
+      </div>
+    </div>
+
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
+    <div id="mainBox" style="display:none">
+      <!-- ПАНЕЛЬ СТАТИСТИКИ (АДМИН) -->
+      <div id="statsPanel" style="display:none">
+        <div class="card">
+          <h3>📊 Статистика</h3>
+          <div class="stats-grid" id="statsGrid"></div>
+          <div style="margin-top:16px">
+            <button id="loadStatsBtn" class="btn ghost">Обновить статистику</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- МАТЕРИАЛЫ -->
+      <div class="card notes">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3>📄 Материалы</h3>
+          <button id="logoutBtn" class="btn ghost">🚪 Выйти</button>
+        </div>
+        <input id="title" placeholder="Название материала">
+        <textarea id="desc" placeholder="Краткое описание"></textarea>
+        <input id="image" type="file" accept="image/*">
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button id="addNoteBtn" class="btn">➕ Добавить</button>
+          <button id="refreshBtn" class="btn ghost">🔄 Обновить</button>
+        </div>
+        <div id="notesList" class="note-grid"></div>
+      </div>
+
+      <!-- НОВОСТИ -->
+      <div class="card news" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3>📰 Новости</h3>
+          <div id="newsAdminBtn" style="display:none"><button id="addNewsBtn" class="btn ghost">➕ Новая новость</button></div>
+        </div>
+        <div id="newsForm" style="display:none;margin-bottom:16px;padding:12px;background:rgba(0,0,0,0.05);border-radius:8px">
+          <input id="newsTitle" placeholder="Заголовок">
+          <textarea id="newsDesc" placeholder="Содержание"></textarea>
+          <input id="newsImage" type="file" accept="image/*">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="saveNewsBtn" class="btn">💾 Сохранить</button>
+            <button id="cancelNewsBtn" class="btn ghost">❌ Отменить</button>
+          </div>
+        </div>
+        <div id="newsList" class="note-grid"></div>
+      </div>
+
+      <!-- ПОСОБИЯ -->
+      <div class="card guides" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3>📚 Пособия</h3>
+          <div id="guidesAdminBtn" style="display:none"><button id="addGuideBtn" class="btn ghost">➕ Новое пособие</button></div>
+        </div>
+        <div id="guidesForm" style="display:none;margin-bottom:16px;padding:12px;background:rgba(0,0,0,0.05);border-radius:8px">
+          <input id="guideTitle" placeholder="Название">
+          <textarea id="guideDesc" placeholder="Описание"></textarea>
+          <input id="guideImage" type="file" accept="image/*">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="saveGuideBtn" class="btn">💾 Сохранить</button>
+            <button id="cancelGuideBtn" class="btn ghost">❌ Отменить</button>
+          </div>
+        </div>
+        <div id="guidesList" class="note-grid"></div>
+      </div>
+
+      <!-- ТЕСТЫ -->
+      <div id="testsPanel" class="card tests" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3>🧪 Тесты</h3>
+          <div id="testsAdminBtn" style="display:none"><button id="createTestBtn" class="btn ghost">➕ Создать тест</button></div>
+        </div>
+        <div id="testsList" class="note-grid"></div>
+      </div>
+
+      <!-- ПАНЕЛЬ АДМИНИСТРАТОРА -->
+      <div id="adminPanel" class="card admin" style="display:none;margin-top:16px">
+        <h3>⚙️ Панель администратора v4.0.0</h3>
+        
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchAdminTab('users')">👥 Пользователи</button>
+          <button class="tab-btn" onclick="switchAdminTab('settings')">⚙️ Параметры</button>
+          <button class="tab-btn" onclick="switchAdminTab('results')">📊 Результаты</button>
+        </div>
+
+        <!-- ВКЛАДКА ПОЛЬЗОВАТЕЛИ -->
+        <div id="tab-users" class="tab-content active">
+          <h4>Управление пользователями</h4>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <input id="u_login" placeholder="Логин" style="flex:1;min-width:120px">
+            <input id="u_pass" placeholder="Пароль" style="flex:1;min-width:120px">
+            <select id="u_role" style="flex:1;min-width:100px"><option value="student">Ученик</option><option value="admin">Админ</option></select>
+            <button id="saveUserBtn" class="btn">💾 Сохранить</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <input id="del_login" placeholder="Логин для удаления" style="flex:1;min-width:150px">
+            <button id="delUserBtn" class="btn danger">🗑️ Удалить</button>
+          </div>
+          <h4 style="margin-top:16px">Список пользователей</h4>
+          <div id="usersList" class="small" style="max-height:200px;overflow-y:auto;border:1px solid var(--input-border);padding:8px;border-radius:8px"></div>
+        </div>
+
+        <!-- ВКЛАДКА ПАРАМЕТРЫ -->
+        <div id="tab-settings" class="tab-content">
+          <h4>Параметры системы</h4>
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+            <label style="min-width:100px">Тема оформления:</label>
+            <select id="themeSel" style="flex:1;min-width:150px">
+              <option value="light">☀️ Светлая</option>
+              <option value="dark">🌙 Темная</option>
+            </select>
+            <button id="saveThemeBtn" class="btn ghost">💾 Применить</button>
+          </div>
+          <div style="padding:12px;background:rgba(11,94,168,0.1);border-radius:8px;margin-top:12px">
+            <strong>Информация о системе:</strong><br>
+            Версия: 4.0.0<br>
+            Функции: Аналитика, Уведомления, Rate Limiting<br>
+          </div>
+        </div>
+
+        <!-- ВКЛАДКА РЕЗУЛЬТАТЫ -->
+        <div id="tab-results" class="tab-content">
+          <h4>Результаты тестов</h4>
+          <button id="loadResultsBtn" class="btn ghost" style="margin-bottom:8px">🔄 Загрузить результаты</button>
+          <div id="resultsList" class="small" style="max-height:300px;overflow-y:auto;border:1px solid var(--input-border);padding:8px;border-radius:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНЫЕ ОКНА -->
+  <div id="testModal" class="modal">
+    <div class="modal-container" style="max-width:700px">
+      <button class="close-btn" onclick="closeTestModal()">✕</button>
+      <div style="background:linear-gradient(135deg,var(--primary),#0a4a8a);color:white;padding:24px;margin:-32px -32px 24px -32px;border-radius:16px 16px 0 0">
+        <h2 class="test-title" id="testModalTitle" style="margin:0;color:white">Тест</h2>
+        <div class="test-progress" style="margin-top:12px;font-size:13px;opacity:0.9">Вопрос <span id="currentQuestion">1</span> из <span id="totalQuestions">1</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="testProgressFill" style="width:0%"></div></div>
+      </div>
+      <div id="testContent" style="max-height:60vh;overflow-y:auto"></div>
+      <div id="testResultContainer" style="display:none;text-align:center;padding:40px 20px">
+        <h3>✅ Тест завершен!</h3>
+        <div style="font-size:48px;font-weight:700;color:var(--primary);margin:20px 0" id="testScore"></div>
+        <div id="testDetails"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap">
+        <button id="prevBtn" class="btn ghost" style="flex:1">← Назад</button>
+        <button id="nextBtn" class="btn" style="flex:1">Далее →</button>
+        <button id="submitBtn" class="btn success" style="flex:1;display:none">✓ Завершить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="wizardModal" class="modal">
+    <div class="modal-container">
+      <button class="close-btn" onclick="closeWizardModal()">✕</button>
+      <div class="wizard-step active" id="step1">
+        <h2>➕ Создание теста</h2>
+        <label>Название теста:</label>
+        <input id="wizTestTitle" placeholder="Введите название теста">
+        <label style="margin-top:12px">Описание:</label>
+        <textarea id="wizTestDesc" placeholder="Краткое описание"></textarea>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn ghost" style="flex:1" onclick="closeWizardModal()">Отменить</button>
+          <button class="btn" style="flex:1" onclick="wizardNextStep()">Далее →</button>
+        </div>
+      </div>
+      <div class="wizard-step" id="step2">
+        <h2>📝 Добавление вопросов</h2>
+        <div id="questionsListWiz" style="margin-top:12px;max-height:300px;overflow-y:auto;border:1px solid var(--input-border);padding:8px;border-radius:8px"></div>
+        <button class="btn ghost" style="width:100%;margin-top:12px" onclick="addQuestionToWizard()">➕ Добавить вопрос</button>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn ghost" style="flex:1" onclick="wizardPrevStep()">← Назад</button>
+          <button class="btn success" style="flex:1" onclick="finishTestCreation()">✓ Завершить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="editModal" class="modal">
+    <div class="modal-container">
+      <button class="close-btn" onclick="closeEditMaterial()">✕</button>
+      <h2>✏️ Редактирование материала</h2>
+      <label>Название:</label>
+      <input id="editTitle" placeholder="Название материала">
+      <label style="margin-top:12px">Описание:</label>
+      <textarea id="editDesc" placeholder="Краткое описание"></textarea>
+      <label style="margin-top:12px">Изображение:</label>
+      <input id="editImage" type="file" accept="image/*">
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn ghost" style="flex:1" onclick="closeEditMaterial()">Отменить</button>
+        <button class="btn" style="flex:1" id="saveMaterialBtn">💾 Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="small">
+    <strong>Учитель Онлайн v4.0.0</strong> — Система управления образовательным контентом<br>
+    © 2026 Educational Platform | 
+    <span id="footerVersion">Версия 4.0.0</span> |
+    Все права защищены
+  </footer>
+
+  <script>
+    const API = "";
+    let current = "", role = "", currentPass = "";
+    let currentTestData = null, currentQuestionIndex = 0, testAnswers = [];
+    let wizardQuestions = [], wizardStep = 1;
+    let currentEditIndex = -1, currentEditIsOwnMaterial = false;
+    let testStartTime = 0;
+    let notifications = [], unreadCount = 0;
+
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      document.getElementById('loginBtn').addEventListener('click', login);
+      document.getElementById('logoutBtn').addEventListener('click', logout);
+      document.getElementById('addNoteBtn').addEventListener('click', addNote);
+      document.getElementById('refreshBtn').addEventListener('click', refreshNotes);
+      document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+      document.getElementById('notificationBell').addEventListener('click', showNotifications);
+      document.getElementById('saveThemeBtn').addEventListener('click', saveTheme);
+      
+      document.getElementById('addNewsBtn')?.addEventListener('click', () => showNewsForm());
+      document.getElementById('saveNewsBtn')?.addEventListener('click', saveNews);
+      document.getElementById('cancelNewsBtn')?.addEventListener('click', hideNewsForm);
+      
+      document.getElementById('addGuideBtn')?.addEventListener('click', () => showGuideForm());
+      document.getElementById('saveGuideBtn')?.addEventListener('click', saveGuide);
+      document.getElementById('cancelGuideBtn')?.addEventListener('click', hideGuideForm);
+      
+      document.getElementById('createTestBtn')?.addEventListener('click', () => openWizardModal());
+      document.getElementById('saveUserBtn').addEventListener('click', saveUser);
+      document.getElementById('delUserBtn').addEventListener('click', deleteUser);
+      document.getElementById('loadResultsBtn').addEventListener('click', loadResults);
+      document.getElementById('loadStatsBtn').addEventListener('click', loadStats);
+      
+      document.getElementById('login').addEventListener('keypress', e => {
+        if (e.key === 'Enter') login();
+      });
+      document.getElementById('password').addEventListener('keypress', e => {
+        if (e.key === 'Enter') login();
+      });
+    });
+
+    // ===== ТЕМА =====
+    function initTheme() {
+      const theme = localStorage.getItem('theme') || 'light';
+      document.body.className = theme + '-mode';
+      document.getElementById('themeToggle').textContent = theme === 'light' ? '🌙' : '☀️';
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.body.className;
+      const newTheme = currentTheme === 'light-mode' ? 'dark' : 'light';
+      document.body.className = newTheme + '-mode';
+      localStorage.setItem('theme', newTheme);
+      document.getElementById('themeToggle').textContent = newTheme === 'light' ? '🌙' : '☀️';
+    }
+
+    async function saveTheme() {
+      const theme = document.getElementById('themeSel').value;
+      const response = await fetch(API + '/admin/settings/theme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme, admin_login: current, admin_password: currentPass })
+      });
+      if (response.ok) {
+        alert('Тема сохранена!');
+        document.body.className = theme + '-mode';
+        localStorage.setItem('theme', theme);
+      }
+    }
+
+    // ===== ВХОД/ВЫХОД =====
+    async function login() {
+      const username = document.getElementById('login').value;
+      const password = document.getElementById('password').value;
+      
+      if (!username || !password) {
+        document.getElementById('loginError').textContent = 'Заполните все поля';
+        return;
+      }
+
+      try {
+        const response = await fetch(API + '/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login: username, password })
+        });
+        
+        const data = await response.json();
+        if (data.ok) {
+          current = username;
+          currentPass = password;
+          role = data.role;
+          
+          document.getElementById('loginBox').style.display = 'none';
+          document.getElementById('mainBox').style.display = 'block';
+          document.getElementById('userInfo').textContent = `👤 ${username} (${role})`;
+          
+          if (role === 'admin') {
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('newsAdminBtn').style.display = 'block';
+            document.getElementById('guidesAdminBtn').style.display = 'block';
+            document.getElementById('testsAdminBtn').style.display = 'block';
+            document.getElementById('statsPanel').style.display = 'block';
+            document.getElementById('themeSel').value = localStorage.getItem('theme') || 'light';
+            loadStats();
+          }
+          
+          refreshNotes();
+          refreshNews();
+          refreshGuides();
+          refreshTests();
+          loadUsersList();
+          loadNotifications();
+        } else {
+          document.getElementById('loginError').textContent = data.error || 'Ошибка входа';
+        }
+      } catch (e) {
+        document.getElementById('loginError').textContent = 'Ошибка сервера';
+      }
+    }
+
+    function logout() {
+      document.getElementById('mainBox').style.display = 'none';
+      document.getElementById('loginBox').style.display = 'block';
+      document.getElementById('login').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('loginError').textContent = '';
+      current = '';
+      role = '';
+      currentPass = '';
+    }
+
+    // ===== УВЕДОМЛЕНИЯ =====
+    async function loadNotifications() {
+      try {
+        const response = await fetch(API + `/notifications/${current}`);
+        notifications = await response.json();
+        unreadCount = notifications.filter(n => !n.read).length;
+        updateNotificationBadge();
+      } catch (e) {
+        console.log('Ошибка загрузки уведомлений');
+      }
+    }
+
+    function updateNotificationBadge() {
+      const badge = document.getElementById('notificationBadge');
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function showNotifications() {
+      const modal = document.getElementById('notificationModal');
+      const list = document.getElementById('notificationsList');
+      
+      if (notifications.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:var(--muted)">Уведомлений нет</p>';
+      } else {
+        list.innerHTML = notifications.map((n, i) => `
+          <div class="notification-item ${n.read ? '' : 'unread'}">
+            <div class="notification-content">
+              <div class="notification-title">${n.title}</div>
+              <div class="notification-message">${n.message}</div>
+              <div class="notification-time">${new Date(n.timestamp).toLocaleString('ru-RU')}</div>
+            </div>
+            ${!n.read ? `<button class="btn small ghost" onclick="markNotificationRead(${i})">Прочитано</button>` : ''}
+          </div>
+        `).join('');
+      }
+      
+      modal.classList.add('active');
+    }
+
+    function closeNotificationModal() {
+      document.getElementById('notificationModal').classList.remove('active');
+    }
+
+    async function markNotificationRead(idx) {
+      try {
+        await fetch(API + `/notifications/read/${idx}`, { method: 'POST' });
+        loadNotifications();
+      } catch (e) {
+        console.log('Ошибка');
+      }
+    }
+
+    // ===== МАТЕРИАЛЫ =====
+    async function addNote() {
+      const title = document.getElementById('title').value;
+      const desc = document.getElementById('desc').value;
+      const image = document.getElementById('image').value || '';
+      
+      if (!title || !desc) {
+        alert('Заполните название и описание');
+        return;
+      }
+
+      try {
+        const response = await fetch(API + '/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, desc, user: current, image })
+        });
+        
+        if (response.ok) {
+          document.getElementById('title').value = '';
+          document.getElementById('desc').value = '';
+          document.getElementById('image').value = '';
+          refreshNotes();
+        }
+      } catch (e) {
+        alert('Ошибка при добавлении материала');
+      }
+    }
+
+    async function refreshNotes() {
+      try {
+        const response = await fetch(API + '/notes');
+        const notes = await response.json();
+        
+        const list = document.getElementById('notesList');
+        if (notes.length === 0) {
+          list.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted)">Материалов еще нет</p>';
+          return;
+        }
+
+        list.innerHTML = notes.map((note, idx) => `
+          <div class="note-card">
+            ${note.image ? `<img src="${note.image}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:12px">` : ''}
+            <h4>${note.title}</h4>
+            <p>${note.desc}</p>
+            <div class="note-meta">
+              <span>👤 ${note.user || 'система'}</span>
+              <span>${note.created_at ? new Date(note.created_at).toLocaleDateString('ru-RU') : ''}</span>
+            </div>
+            ${role === 'admin' ? `
+              <div class="btn-group" style="margin-top:8px">
+                <button class="btn small" onclick="editNote(${idx})">✏️</button>
+                <button class="btn small" onclick="deleteNote(${idx})">🗑️</button>
+                <button class="btn small ghost" onclick="assignMaterial(${idx})">👤</button>
+              </div>
+            ` : note.user === current ? `
+              <button class="btn small ghost" style="width:100%;margin-top:8px" onclick="editOwnNote(${idx})">✏️ Редактировать</button>
+            ` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        console.log('Ошибка загрузки материалов');
+      }
+    }
+
+    function editNote(idx) {
+      currentEditIndex = idx;
+      currentEditIsOwnMaterial = false;
+      // Load and show edit modal
+      document.getElementById('editModal').classList.add('active');
+    }
+
+    async function deleteNote(idx) {
+      if (!confirm('Вы уверены?')) return;
+      try {
+        const response = await fetch(API + '/admin/notes/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ index: idx, admin_login: current, admin_password: currentPass })
+        });
+        if (response.ok) refreshNotes();
+      } catch (e) {
+        alert('Ошибка');
+      }
+    }
+
+    function editOwnNote(idx) {
+      currentEditIndex = idx;
+      currentEditIsOwnMaterial = true;
+      document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeEditMaterial() {
+      document.getElementById('editModal').classList.remove('active');
+    }
+
+    async function assignMaterial(idx) {
+      const assignTo = prompt('Введите логин ученика (или оставьте пусто для всех):');
+      if (assignTo === null) return;
+
+      try {
+        const response = await fetch(API + '/admin/materials/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ index: idx, assigned_to: assignTo, admin_login: current, admin_password: currentPass })
+        });
+        if (response.ok) {
+          alert('Материал назначен!');
+          refreshNotes();
+        }
+      } catch (e) {
+        alert('Ошибка');
+      }
+    }
+
+    // ===== НОВОСТИ =====
+    function showNewsForm() {
+      document.getElementById('newsForm').style.display = 'block';
+    }
+
+    function hideNewsForm() {
+      document.getElementById('newsForm').style.display = 'none';
+      document.getElementById('newsTitle').value = '';
+      document.getElementById('newsDesc').value = '';
+      document.getElementById('newsImage').value = '';
+    }
+
+    async function saveNews() {
+      const title = document.getElementById('newsTitle').value;
+      const desc = document.getElementById('newsDesc').value;
+      const image = document.getElementById('newsImage').value || '';
+
+      if (!title || !desc) {
+        alert('Заполните все поля');
+        return;
+      }
+
+      try {
+        const response = await fetch(API + '/news', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, desc, user: current, image })
+        });
+        if (response.ok) {
+          hideNewsForm();
+          refreshNews();
+        }
+      } catch (e) {
+        alert('Ошибка');
+      }
+    }
+
+    async function refreshNews() {
+      try {
+        const response = await fetch(API + '/news');
+        const news = await response.json();
+        
+        const list = document.getElementById('newsList');
+        if (news.length === 0) {
+          list.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted)">Новостей нет</p>';
+          return;
+        }
+
+        list.innerHTML = news.map((item, idx) => `
+          <div class="note-card">
+            ${item.image ? `<img src="${item.image}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:12px">` : ''}
+            <h4>${item.title}</h4>
+            <p>${item.desc}</p>
+            <div class="note-meta">
+              <span>👤 ${item.user}</span>
+              <span>${new Date(item.created_at).toLocaleDateString('ru-RU')}</span>
+            </div>
+            ${role === 'admin' ? `
+              <div class="btn-group" style="margin-top:8px">
+                <button class="btn small danger" onclick="deleteNews(${idx})">🗑️ Удалить</button>
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        console.log('Ошибка загрузки новостей');
+      }
+    }
+
+    async function deleteNews(idx) {
+      if (!confirm('Удалить эту новость?')) return;
+      try {
+        const response = await fetch(API + '/admin/news/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ index: idx, admin_login: current, admin_password: currentPass })
+        });
+        if (response.ok) refreshNews();
+      } catch (e) {
+        alert('Ошибка');
+      }
+    }
+
+    // ===== ПОСОБИЯ =====
+    function showGuideForm() {
+      document.getElementById('guidesForm').style.display = 'block';
+    }
+
+    function hideGuideForm() {
+      document.getElementById('guidesForm').style.display = 'none';
+      document.getElementById('guideTitle').value = '';
+      document.getElementById('guideDesc').value = '';
+      document.getElementById('guideImage').value = '';
+    }
+
+    async function saveGuide() {
+      const title = document.getElementById('guideTitle').value;
+      const desc = document.getElementById('guideDesc').value;
+      const image = document.getElementById('guideImage').value || '';
+
+      if (!title || !desc) {
+        alert('Заполните все поля');
+        return;
+      }
+
+      try {
+        const response = await fetch(API + '/guides', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, desc, user: current, image })
+        });
+        if (response.ok) {
+          hideGuideForm();
+          refreshGuides();
+        }
+      } catch (e) {
+        alert('Ошибка');
+      }
+    }
+
+    async function refreshGuides() {
+      try {
+        const response = await fetch(API + '/guides');
+        const guides = await response.json();
+        
+        const list = document.getElementById('guidesList');
+        if (guides.length === 0) {
+          list.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted)">Пособий нет</p>';
+          return;
+        }
+
+        list.innerHTML = guides.map((item, idx) => `
+          <div class="note-card">
+            ${item.image ? `<img src="${item.image}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:12px">` : ''}
+            <h4>${item.title}</h4>
+            <p>${item.desc}</p>
+            <div class="note-meta">
+              <span>👤 ${item.user}</span>
+              <span>${new Date(item.created_at).toLocaleDateString('ru-RU')}</span>
+            </div>
+            ${role === 'admin' ? `
+              <button class="btn small danger" style="width:100%;margin-top:8px" onclick="deleteGuide(${idx})">🗑️ Удалить</button>
+            ` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        console.log('Ошибка загрузки пособий');
+      }
+    }
+
+    async function deleteGuide(idx) {
+      if (!confirm('Удалить это пособие?')) return;
+      try {
+        const response = await fetch(API + '/admin/guides/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ index: idx, admin_login: current, admin_password: currentPass })
+        });
+        if (response.ok) refreshGuides();
+      } catch (e) {
+        alert('Ошибка');
+      }
+    }
+
+    // ===== ТЕСТЫ =====
+    async function refreshTests() {
+      try {
+        const response = await fetch(API + '/tests');
+        const tests = await response.json();
+        
+        const list = document.getElementById('testsList');
+        if (tests.length === 0) {
+          list.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted)">Тестов нет</p>';
+          return;
+        }
+
+        list.innerHTML = tests.map((test, idx) => `
+          <div class="note-card">
+            <h4>🧪 ${test.title}</h4>
+            <p>${test.questions?.length || 0} вопросов</p>
+            <button class="btn" style="width:100%;margin-top:12px" onclick="startTest(${idx})">📝 Начать</button>
+            ${role === 'admin' ? `
+              <button class="btn danger small" style="width:100%;margin-top:8px" onclick="deleteTest(${test.id})">🗑️</button>
+            ` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        console.log('Ошибка загрузки тестов');
+      }
+    }
+
+    function openWizardModal() {
+      wizardStep = 1;
+      wizardQuestions = [];
+      document.getElementById('wizTestTitle').value = '';
+      document.getElementById('wizTestDesc').value = '';
+      document.getElementById('step1').classList.add('active');
+      document.getElementById('step2').classList.remove('active');
+      document.getElementById('wizardModal').classList.add('active');
+    }
+
+    function closeWizardModal() {
+      document.getElementById('wizardModal').classList.remove('active');
+    }
+
+    function wizardNextStep() {
+      const title = document.getElementById('wizTestTitle').value;
+      if (!title) {
+        alert('Введите название теста');
+        return;
+      }
+      document.getElementById('step1').classList.remove('active');
+      document.getElementById('step2').classList.add('active');
+      wizardStep = 2;
+    }
+
+    function wizardPrevStep() {
+      document.getElementById('step2').classList.remove('active');
+      document.getElementById('step1').classList.add('active');
+      wizardStep = 1;
+    }
+
+    function addQuestionToWizard() {
+      const q = prompt('Введите текст вопроса:');
+      if (!q) return;
+
+      const answers = prompt('Введите правильные ответы (через запятую):')?.split(',').map(a => a.trim()) || [];
+      const choice1 = prompt('Вариант 1:') || '';
+      const choice2 = prompt('Вариант 2:') || '';
+      const choice3 = prompt('Вариант 3:') || '';
+
+      wizardQuestions.push({
+        q,
+        type: 'single',
+        choices: [choice1, choice2, choice3].filter(c => c),
+        answers
+      });
+
+      renderWizardQuestions();
+    }
+
+    function renderWizardQuestions() {
+      const list = document.getElementById('questionsListWiz');
+      list.innerHTML = wizardQuestions.map((q, i) => `
+        <div style="padding:8px;background:var(--input-bg);border-radius:4px;margin-bottom:8px">
+          <strong>${i + 1}. ${q.q}</strong><br>
+          <small>Варианты: ${q.choices.join(', ')}</small><br>
+          <small style="color:var(--success)">✓ ${q.answers.join(', ')}</small>
+          <button class="btn small danger" style="float:right" onclick="removeQuestion(${i})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function removeQuestion(idx) {
+      wizardQuestions.splice(idx, 1);
+      renderWizardQuestions();
+    }
+
+    async function finishTestCreation() {
+      if (wizardQuestions.length === 0) {
+        alert('Добавьте хотя бы один вопрос');
+        return;
+      }
+
+      try {
+        const response = await fetch(API + '/admin/tests/add_or_update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            test: {
+              title: document.getElementById('wizTestTitle').value,
+              description: document.getElementById('wizTestDesc').value,
+              questions: wizardQuestions
+            },
+            admin_login: current,
+            admin_password: currentPass
+          })
+        });
+
+        if (response.ok) {
+          alert('Тест создан!');
+          closeWizardModal();
+          refreshTests();
+        }
+      } catch (e) {
+        alert('Ошибка создания теста');
+      }
+    }
+
+    async function startTest(idx) {
+      try {
+        const response = await fetch(API + '/tests');
+        const tests = await response.json();
+        const test = tests[idx];
+
+        currentTestData = test;
+        currentQuestionIndex = 0;
+        testAnswers = new Array(test.questions.length).fill(null);
+        testStartTime = Date.now();
+
+        document.getElementById('testModalTitle').textContent = test.title;
+        document.getElementById('totalQuestions').textContent = test.questions.length;
+        document.getElementById('testResultContainer').style.display = 'none';
+        document.getElementById('testModal').classList.add('active');
+
+        showTestQuestion();
+      } catch (e) {
+        alert('Ошибка загрузки теста');
+      }
+    }
+
+    function showTestQuestion() {
+      const q = currentTestData.questions[currentQuestionIndex];
+      const content = document.getElementById('testContent');
+
+      document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+      const progress = ((currentQuestionIndex + 1) / currentTestData.questions.length) * 100;
+      document.getElementById('testProgressFill').style.width = progress + '%';
+
+      let html = `<div style="padding:24px">
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:16px">
+          Вопрос ${currentQuestionIndex + 1} из ${currentTestData.questions.length}
+        </div>
+        <h3 style="margin:0 0 16px 0">${q.q}</h3>`;
+
+      if (q.image) {
+        html += `<img src="${q.image}" style="max-width:100%;border-radius:8px;margin:16px 0">`;
+      }
+
+      if (q.type === 'multiple') {
+        html += '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">';
+        q.choices.forEach((choice, i) => {
+          const isSelected = testAnswers[currentQuestionIndex]?.includes(i);
+          html += `
+            <label style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid var(--input-border);border-radius:8px;cursor:pointer;transition:all 0.2s;${isSelected ? 'border-color:var(--primary);background:rgba(11,94,168,0.1)' : ''}">
+              <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="handleMultipleChoice(${i})">
+              <span>${choice}</span>
+            </label>
+          `;
+        });
+        html += '</div>';
+      } else {
+        html += '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">';
+        q.choices.forEach((choice, i) => {
+          const isSelected = testAnswers[currentQuestionIndex] === i;
+          html += `
+            <label style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid var(--input-border);border-radius:8px;cursor:pointer;transition:all 0.2s;${isSelected ? 'border-color:var(--primary);background:rgba(11,94,168,0.1)' : ''}">
+              <input type="radio" name="q${currentQuestionIndex}" ${isSelected ? 'checked' : ''} onchange="handleSingleChoice(${i})">
+              <span>${choice}</span>
+            </label>
+          `;
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
+      content.innerHTML = html;
+
+      document.getElementById('prevBtn').style.display = currentQuestionIndex > 0 ? 'block' : 'none';
+      document.getElementById('nextBtn').style.display = currentQuestionIndex < currentTestData.questions.length - 1 ? 'block' : 'none';
+      document.getElementById('submitBtn').style.display = currentQuestionIndex === currentTestData.questions.length - 1 ? 'block' : 'none';
+    }
+
+    function handleSingleChoice(idx) {
+      testAnswers[currentQuestionIndex] = idx;
+    }
+
+    function handleMultipleChoice(idx) {
+      if (!Array.isArray(testAnswers[currentQuestionIndex])) {
+        testAnswers[currentQuestionIndex] = [];
+      }
+      const arr = testAnswers[currentQuestionIndex];
+      const pos = arr.indexOf(idx);
+      if (pos === -1) {
+        arr.push(idx);
+      } else {
+        arr.splice(pos, 1);
+      }
+      testAnswers[currentQuestionIndex] = arr;
+    }
+
+    document.getElementById('prevBtn')?.addEventListener('click', () => {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        showTestQuestion();
+      }
+    });
+
+    document.getElementById('nextBtn')?.addEventListener('click', () => {
+      if (currentQuestionIndex < currentTestData.questions.length - 1) {
+        currentQuestionIndex++;
+        showTestQuestion();
+      }
+    });
+
+    document.getElementById('submitBtn')?.addEventListener('click', submitTest);
+
+    async function submitTest() {
+      const timeSpent = Math.round((Date.now() - testStartTime) / 1000);
+      const answers = testAnswers.map((a, i) => {
+        if (currentTestData.questions[i].type === 'multiple' && !Array.isArray(a)) {
+          return currentTestData.questions[i].choices[a] || null;
+        }
+        return Array.isArray(a) ? a.map(idx => currentTestData.questions[i].choices[idx]) : (currentTestData.questions[i].choices[a] || null);
+      });
+
+      try {
+        const response = await fetch(API + '/tests/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            test_id: currentTestData.id,
+            answers,
+            user: current,
+            time_spent: timeSpent
+          })
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          showTestResult(result);
+        }
+      } catch (e) {
+        alert('Ошибка при отправке теста');
+      }
+    }
+
+    function showTestResult(result) {
+      document.getElementById('testContent').style.display = 'none';
+      document.getElementById('testResultContainer').style.display = 'block';
+      document.getElementById('prevBtn').style.display = 'none';
+      document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'none';
+
+      const percentage = result.percentage;
+      let badge = '';
+      if (percentage >= 80) badge = '<span class="badge badge-success">✓ Отлично!</span>';
+      else if (percentage >= 60) badge = '<span class="badge badge-warning">⚠ Хорошо</span>';
+      else badge = '<span class="badge badge-warning">⚠ Нужно улучшить</span>';
+
+      document.getElementById('testScore').innerHTML = `${result.score} / ${result.total} (${percentage}%) ${badge}`;
+
+      let details = '<div style="text-align:left;max-height:300px;overflow-y:auto">';
+      result.details.forEach(d => {
+        const icon = d.correct ? '✓' : '✗';
+        const color = d.correct ? 'var(--success)' : 'var(--danger)';
+        details += `
+          <div style="padding:8px;border-bottom:1px solid var(--input-border);color:${color}">
+            <strong>${icon} Вопрос ${d.question}:</strong> ${d.user_answer || 'нет ответа'}
+          </div>
+        `;
+      });
+      details += '</div>';
+      document.getElementById('testDetails').innerHTML = details;
+    }
+
+    function closeTestModal() {
+      document.getElementById('testModal').classList.remove('active');
+    }
+
+    async function deleteTest(testId) {
+      if (!confirm('Удалить тест?')) return;
+      try {
+        const response = await fetch(API + '/admin/tests/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: testId, admin_login: current, admin_password: currentPass })
+        });
+        if (response.ok) refreshTests();
+      } catch (e) {
+        alert('Ошибка');
+      }
+    }
+
+    // ===== АДМИНИСТРАТОР =====
+    function switchAdminTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    async function loadUsersList() {
+      try {
+        const response = await fetch(API + '/admin/users/list', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_login: current, admin_password: currentPass })
+        });
+
+        const users = await response.json();
+        const list = document.getElementById('usersList');
+        list.innerHTML = Object.entries(users).map(([name, data]) => `
+          <div style="padding:8px;border-bottom:1px solid var(--input-border);display:flex;justify-content:space-between">
+            <span>👤 ${name}</span>
+            <span style="color:var(--primary);font-weight:600">${data.role === 'admin' ? '⚙️ Админ' : '📚 Ученик'}</span>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.log('Ошибка загрузки пользователей');
+      }
+    }
+
+    async function saveUser() {
+      const login = document.getElementById('u_login').value;
+      const password = document.getElementById('u_pass').value;
+      const role = document.getElementById('u_role').value;
+
+      if (!login) {
+        alert('Введите логин');
+        return;
+      }
+
+      try {
+        const response = await fetch(API + '/admin/users/add_or_update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login, password, role, admin_login: current, admin_password: currentPass })
+        });
+
+        if (response.ok) {
+          alert('Пользователь сохранен!');
+          document.getElementById('u_login').value = '';
+          document.getElementById('u_pass').value = '';
+          loadUsersList();
+        } else {
+          const data = await response.json();
+          alert(data.error || 'Ошибка');
+        }
+      } catch (e) {
+        alert('Ошибка сервера');
+      }
+    }
+
+    async function deleteUser() {
+      const login = document.getElementById('del_login').value;
+      if (!login) {
+        alert('Введите логин');
+        return;
+      }
+
+      if (!confirm(`Удалить пользователя ${login}?`)) return;
+
+      try {
+        const response = await fetch(API + '/admin/users/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login, admin_login: current, admin_password: currentPass })
+        });
+
+        if (response.ok) {
+          alert('Пользователь удален!');
+          document.getElementById('del_login').value = '';
+          loadUsersList();
+        } else {
+          const data = await response.json();
+          alert(data.error || 'Ошибка');
+        }
+      } catch (e) {
+        alert('Ошибка');
+      }
+    }
+
+    async function loadResults() {
+      try {
+        const response = await fetch(API + '/admin/results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_login: current, admin_password: currentPass })
+        });
+
+        const results = await response.json();
+        const list = document.getElementById('resultsList');
+        
+        if (results.length === 0) {
+          list.innerHTML = '<p style="text-align:center;color:var(--muted)">Результатов нет</p>';
+          return;
+        }
+
+        list.innerHTML = results.map(r => `
+          <div style="padding:8px;border-bottom:1px solid var(--input-border)">
+            <strong>${r.user}</strong> - Тест #${r.test_id}: ${r.score}/${r.total} (${r.percentage}%)<br>
+            <small style="color:var(--muted)">Время: ${r.time_spent}сек | ${new Date(r.completed_at).toLocaleString('ru-RU')}</small>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.log('Ошибка загрузки результатов');
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const response = await fetch(API + '/admin/analytics/stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_login: current, admin_password: currentPass })
+        });
+
+        const stats = await response.json();
+        const grid = document.getElementById('statsGrid');
+        grid.innerHTML = `
+          <div class="stat-box">
+            <div class="stat-number">${stats.users}</div>
+            <div class="stat-label">👥 Пользователей</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${stats.materials}</div>
+            <div class="stat-label">📄 Материалов</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${stats.tests}</div>
+            <div class="stat-label">🧪 Тестов</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${stats.completed_tests}</div>
+            <div class="stat-label">✓ Завершено</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${stats.average_score}%</div>
+            <div class="stat-label">📊 Средний балл</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${stats.news}</div>
+            <div class="stat-label">📰 Новостей</div>
+          </div>
+        `;
+      } catch (e) {
+        console.log('Ошибка загрузки статистики');
+      }
+    }
+  </script>
+</body>
+</html>
