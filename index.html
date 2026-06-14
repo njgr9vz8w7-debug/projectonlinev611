@@ -94,6 +94,9 @@
     .calendar-day.other-month{opacity:0.5}
     .calendar-day-number{font-weight:600;color:var(--primary);margin-bottom:4px}
     .calendar-event{font-size:10px;background:rgba(11,94,168,0.2);color:var(--primary);padding:2px 4px;border-radius:3px;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .nav-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;border-bottom:2px solid var(--input-border);padding-bottom:12px}
+    .nav-tab{background:none;border:none;padding:8px 16px;color:var(--muted);cursor:pointer;font-weight:500;border-bottom:3px solid transparent;transition:all 0.2s;margin-bottom:-14px}
+    .nav-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
     @media(max-width:720px){.note-grid{grid-template-columns:repeat(1,1fr)}.modal-container{padding:20px}.header-controls{flex-direction:column;width:100%}.stat-box{min-width:unset}.calendar-grid{grid-template-columns:repeat(7,1fr);gap:4px}.calendar-day{padding:8px;min-height:60px}.calendar-day-number{font-size:12px}}
   </style>
 </head>
@@ -137,121 +140,94 @@
 
     <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
     <div id="mainBox" style="display:none">
-      <!-- ПАНЕЛЬ СТАТИСТИКИ (АДМИН) -->
-      <div id="statsPanel" style="display:none">
+      <!-- НАВИГАЦИОННЫЕ ВКЛАДКИ -->
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchSection('content')">📚 Контент</button>
+        <button class="nav-tab" onclick="switchSection('calendar')">📅 Календарь</button>
+        <button id="adminNavBtn" class="nav-tab" style="display:none" onclick="switchSection('admin')">⚙️ Админ</button>
+      </div>
+
+      <!-- РАЗДЕЛ: КОНТЕНТ (Материалы, Новости, Пособия, Тесты) -->
+      <div id="section-content" class="section-content">
+        <!-- ПАНЕЛЬ СТАТИСТИКИ (АДМИН) -->
+        <div id="statsPanel" style="display:none">
+          <div class="card">
+            <h3>📊 Статистика</h3>
+            <div class="stats-grid" id="statsGrid"></div>
+            <div style="margin-top:16px">
+              <button id="loadStatsBtn" class="btn ghost">Обновить статистику</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- МАТЕРИАЛЫ -->
+        <div class="card notes">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <h3>📄 Материалы</h3>
+            <button id="logoutBtn" class="btn ghost">🚪 Выйти</button>
+          </div>
+          <div id="adminMaterialsForm" style="display:none">
+            <input id="title" placeholder="Название материала">
+            <textarea id="desc" placeholder="Краткое описание"></textarea>
+            <input id="image" type="file" accept="image/*">
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <button id="addNoteBtn" class="btn">➕ Добавить</button>
+              <button id="refreshBtn" class="btn ghost">🔄 Обновить</button>
+            </div>
+          </div>
+          <div id="notesList" class="note-grid"></div>
+        </div>
+
+        <!-- НОВОСТИ -->
+        <div class="card news" style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <h3>📰 Новости</h3>
+            <div id="newsAdminBtn" style="display:none"><button id="addNewsBtn" class="btn ghost">➕ Новая новость</button></div>
+          </div>
+          <div id="newsForm" style="display:none;margin-bottom:16px;padding:12px;background:rgba(0,0,0,0.05);border-radius:8px">
+            <input id="newsTitle" placeholder="Заголовок">
+            <textarea id="newsDesc" placeholder="Содержание"></textarea>
+            <input id="newsImage" type="file" accept="image/*">
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="saveNewsBtn" class="btn">💾 Сохранить</button>
+              <button id="cancelNewsBtn" class="btn ghost">❌ Отменить</button>
+            </div>
+          </div>
+          <div id="newsList" class="note-grid"></div>
+        </div>
+
+        <!-- ПОСОБИЯ -->
+        <div class="card guides" style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <h3>📚 Пособия</h3>
+            <div id="guidesAdminBtn" style="display:none"><button id="addGuideBtn" class="btn ghost">➕ Новое пособие</button></div>
+          </div>
+          <div id="guidesForm" style="display:none;margin-bottom:16px;padding:12px;background:rgba(0,0,0,0.05);border-radius:8px">
+            <input id="guideTitle" placeholder="Название">
+            <textarea id="guideDesc" placeholder="Описание"></textarea>
+            <input id="guideImage" type="file" accept="image/*">
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="saveGuideBtn" class="btn">💾 Сохранить</button>
+              <button id="cancelGuideBtn" class="btn ghost">❌ Отменить</button>
+            </div>
+          </div>
+          <div id="guidesList" class="note-grid"></div>
+        </div>
+
+        <!-- ТЕСТЫ -->
+        <div id="testsPanel" class="card tests" style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <h3>🧪 Тесты</h3>
+            <div id="testsAdminBtn" style="display:none"><button id="createTestBtn" class="btn ghost">➕ Создать тест</button></div>
+          </div>
+          <div id="testsList" class="note-grid"></div>
+        </div>
+      </div>
+
+      <!-- РАЗДЕЛ: КАЛЕНДАРЬ -->
+      <div id="section-calendar" class="section-content" style="display:none">
         <div class="card">
-          <h3>📊 Статистика</h3>
-          <div class="stats-grid" id="statsGrid"></div>
-          <div style="margin-top:16px">
-            <button id="loadStatsBtn" class="btn ghost">Обновить статистику</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- МАТЕРИАЛЫ -->
-      <div class="card notes">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3>📄 Материалы</h3>
-          <button id="logoutBtn" class="btn ghost">🚪 Выйти</button>
-        </div>
-        <input id="title" placeholder="Название материала">
-        <textarea id="desc" placeholder="Краткое описание"></textarea>
-        <input id="image" type="file" accept="image/*">
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <button id="addNoteBtn" class="btn">➕ Добавить</button>
-          <button id="refreshBtn" class="btn ghost">🔄 Обновить</button>
-        </div>
-        <div id="notesList" class="note-grid"></div>
-      </div>
-
-      <!-- НОВОСТИ -->
-      <div class="card news" style="margin-top:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3>📰 Новости</h3>
-          <div id="newsAdminBtn" style="display:none"><button id="addNewsBtn" class="btn ghost">➕ Новая новость</button></div>
-        </div>
-        <div id="newsForm" style="display:none;margin-bottom:16px;padding:12px;background:rgba(0,0,0,0.05);border-radius:8px">
-          <input id="newsTitle" placeholder="Заголовок">
-          <textarea id="newsDesc" placeholder="Содержание"></textarea>
-          <input id="newsImage" type="file" accept="image/*">
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="saveNewsBtn" class="btn">💾 Сохранить</button>
-            <button id="cancelNewsBtn" class="btn ghost">❌ Отменить</button>
-          </div>
-        </div>
-        <div id="newsList" class="note-grid"></div>
-      </div>
-
-      <!-- ПОСОБИЯ -->
-      <div class="card guides" style="margin-top:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3>📚 Пособия</h3>
-          <div id="guidesAdminBtn" style="display:none"><button id="addGuideBtn" class="btn ghost">➕ Новое пособие</button></div>
-        </div>
-        <div id="guidesForm" style="display:none;margin-bottom:16px;padding:12px;background:rgba(0,0,0,0.05);border-radius:8px">
-          <input id="guideTitle" placeholder="Название">
-          <textarea id="guideDesc" placeholder="Описание"></textarea>
-          <input id="guideImage" type="file" accept="image/*">
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="saveGuideBtn" class="btn">💾 Сохранить</button>
-            <button id="cancelGuideBtn" class="btn ghost">❌ Отменить</button>
-          </div>
-        </div>
-        <div id="guidesList" class="note-grid"></div>
-      </div>
-
-      <!-- ТЕСТЫ -->
-      <div id="testsPanel" class="card tests" style="margin-top:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3>🧪 Тесты</h3>
-          <div id="testsAdminBtn" style="display:none"><button id="createTestBtn" class="btn ghost">➕ Создать тест</button></div>
-        </div>
-        <div id="testsList" class="note-grid"></div>
-      </div>
-
-      <!-- ПАНЕЛЬ АДМИНИСТРАТОРА -->
-      <div id="adminPanel" class="card admin" style="display:none;margin-top:16px">
-        <h3>⚙️ Панель администратора v4.5.0</h3>
-        
-        <div class="tabs">
-          <button class="tab-btn active" onclick="switchAdminTab('users')">👥 Пользователи</button>
-          <button class="tab-btn" onclick="switchAdminTab('groups')">👨‍👩‍👧‍👦 Группы</button>
-          <button class="tab-btn" onclick="switchAdminTab('calendar')">📅 Календарь</button>
-          <button class="tab-btn" onclick="switchAdminTab('settings')">⚙️ Параметры</button>
-          <button class="tab-btn" onclick="switchAdminTab('results')">📊 Результаты</button>
-        </div>
-
-        <!-- ВКЛАДКА ПОЛЬЗОВАТЕЛИ -->
-        <div id="tab-users" class="tab-content active">
-          <h4>Управление пользователями</h4>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-            <input id="u_login" placeholder="Логин" style="flex:1;min-width:120px">
-            <input id="u_pass" placeholder="Пароль" style="flex:1;min-width:120px">
-            <select id="u_role" style="flex:1;min-width:100px"><option value="student">Ученик</option><option value="admin">Админ</option></select>
-            <button id="saveUserBtn" class="btn">💾 Сохранить</button>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-            <input id="del_login" placeholder="Логин для удаления" style="flex:1;min-width:150px">
-            <button id="delUserBtn" class="btn danger">🗑️ Удалить</button>
-          </div>
-          <h4 style="margin-top:16px">Список пользователей</h4>
-          <div id="usersList" class="small" style="max-height:200px;overflow-y:auto;border:1px solid var(--input-border);padding:8px;border-radius:8px"></div>
-        </div>
-
-        <!-- ВКЛАДКА ГРУППЫ -->
-        <div id="tab-groups" class="tab-content">
-          <h4>Управление группами/классами</h4>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-            <input id="groupName" placeholder="Название группы (10А, 10Б)" style="flex:1;min-width:150px">
-            <button id="createGroupBtn" class="btn">➕ Создать группу</button>
-          </div>
-          <h4 style="margin-top:16px">Список групп</h4>
-          <div id="groupsList" class="small" style="max-height:300px;overflow-y:auto;border:1px solid var(--input-border);padding:8px;border-radius:8px"></div>
-        </div>
-
-        <!-- ВКЛАДКА КАЛЕНДАРЬ -->
-        <div id="tab-calendar" class="tab-content">
-          <h4>Календарь событий</h4>
+          <h3>📅 Календарь</h3>
           <div class="calendar-header">
             <button class="btn ghost" onclick="prevMonth()">← Пред</button>
             <h3 id="monthYear" style="margin:0;min-width:150px;text-align:center">Январь 2025</h3>
@@ -267,7 +243,10 @@
             <div class="calendar-day-header">ВС</div>
           </div>
           <div id="calendarGrid" class="calendar-grid"></div>
-          <div style="margin-top:16px">
+
+          <!-- ФОРМА ДОБАВЛЕНИЯ СОБЫТИЯ (ТОЛЬКО АДМИН) -->
+          <div id="calendarAdminForm" style="display:none;margin-top:20px;padding:16px;background:rgba(11,94,168,0.05);border-radius:8px">
+            <h4>Добавить событие</h4>
             <input id="eventDate" type="date">
             <input id="eventTitle" placeholder="Название события" style="margin-top:8px">
             <select id="eventType" style="margin-top:8px">
@@ -279,36 +258,78 @@
             <select id="eventGroup" style="margin-top:8px">
               <option value="">-- Для всех --</option>
             </select>
-            <div style="display:flex;gap:8px;margin-top:8px">
+            <div style="display:flex;gap:8px;margin-top:12px">
               <button id="addEventBtn" class="btn" style="flex:1">➕ Добавить событие</button>
               <button id="refreshCalendarBtn" class="btn ghost" style="flex:1">🔄 Обновить</button>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- ВКЛАДКА ПАРАМЕТРЫ -->
-        <div id="tab-settings" class="tab-content">
-          <h4>Параметры системы</h4>
-          <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
-            <label style="min-width:100px">Тема оформления:</label>
-            <select id="themeSel" style="flex:1;min-width:150px">
-              <option value="light">☀️ Светлая</option>
-              <option value="dark">🌙 Темная</option>
-            </select>
-            <button id="saveThemeBtn" class="btn ghost">💾 Применить</button>
+      <!-- РАЗДЕЛ: АДМИНИСТРАТОР (СКРЫТ ДЛЯ УЧЕНИКОВ) -->
+      <div id="section-admin" class="section-content" style="display:none">
+        <div class="card admin">
+          <h3>⚙️ Панель администратора v4.5.0</h3>
+          
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchAdminTab('users')">👥 Пользователи</button>
+            <button class="tab-btn" onclick="switchAdminTab('groups')">👨‍👩‍👧‍👦 Группы</button>
+            <button class="tab-btn" onclick="switchAdminTab('settings')">⚙️ Параметры</button>
+            <button class="tab-btn" onclick="switchAdminTab('results')">📊 Результаты</button>
           </div>
-          <div style="padding:12px;background:rgba(11,94,168,0.1);border-radius:8px;margin-top:12px">
-            <strong>Информация о системе:</strong><br>
-            Версия: 4.5.0<br>
-            Функции: Управление группами, Календарь, Аналитика, Уведомления, Rate Limiting<br>
-          </div>
-        </div>
 
-        <!-- ВКЛАДКА РЕЗУЛЬТАТЫ -->
-        <div id="tab-results" class="tab-content">
-          <h4>Результаты тестов</h4>
-          <button id="loadResultsBtn" class="btn ghost" style="margin-bottom:8px">🔄 Загрузить результаты</button>
-          <div id="resultsList" class="small" style="max-height:300px;overflow-y:auto;border:1px solid var(--input-border);padding:8px;border-radius:8px"></div>
+          <!-- ВКЛАДКА ПОЛЬЗОВАТЕЛИ -->
+          <div id="tab-users" class="tab-content active">
+            <h4>Управление пользователями</h4>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+              <input id="u_login" placeholder="Логин" style="flex:1;min-width:120px">
+              <input id="u_pass" placeholder="Пароль" style="flex:1;min-width:120px">
+              <select id="u_role" style="flex:1;min-width:100px"><option value="student">Ученик</option><option value="admin">Админ</option></select>
+              <button id="saveUserBtn" class="btn">💾 Сохранить</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+              <input id="del_login" placeholder="Логин для удаления" style="flex:1;min-width:150px">
+              <button id="delUserBtn" class="btn danger">🗑️ Удалить</button>
+            </div>
+            <h4 style="margin-top:16px">Список пользователей</h4>
+            <div id="usersList" class="small" style="max-height:200px;overflow-y:auto;border:1px solid var(--input-border);padding:8px;border-radius:8px"></div>
+          </div>
+
+          <!-- ВКЛАДКА ГРУППЫ -->
+          <div id="tab-groups" class="tab-content">
+            <h4>Управление группами/классами</h4>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+              <input id="groupName" placeholder="Название группы (10А, 10Б)" style="flex:1;min-width:150px">
+              <button id="createGroupBtn" class="btn">➕ Создать группу</button>
+            </div>
+            <h4 style="margin-top:16px">Список групп</h4>
+            <div id="groupsList" class="small" style="max-height:300px;overflow-y:auto;border:1px solid var(--input-border);padding:8px;border-radius:8px"></div>
+          </div>
+
+          <!-- ВКЛАДКА ПАРАМЕТРЫ -->
+          <div id="tab-settings" class="tab-content">
+            <h4>Параметры системы</h4>
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+              <label style="min-width:100px">Тема оформления:</label>
+              <select id="themeSel" style="flex:1;min-width:150px">
+                <option value="light">☀️ Светлая</option>
+                <option value="dark">🌙 Темная</option>
+              </select>
+              <button id="saveThemeBtn" class="btn ghost">💾 Применить</button>
+            </div>
+            <div style="padding:12px;background:rgba(11,94,168,0.1);border-radius:8px;margin-top:12px">
+              <strong>Информация о системе:</strong><br>
+              Версия: 4.5.0<br>
+              Функции: Управление группами, Календарь, Аналитика, Уведомления, Rate Limiting<br>
+            </div>
+          </div>
+
+          <!-- ВКЛАДКА РЕЗУЛЬТАТЫ -->
+          <div id="tab-results" class="tab-content">
+            <h4>Результаты тестов</h4>
+            <button id="loadResultsBtn" class="btn ghost" style="margin-bottom:8px">🔄 Загрузить результаты</button>
+            <div id="resultsList" class="small" style="max-height:300px;overflow-y:auto;border:1px solid var(--input-border);padding:8px;border-radius:8px"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -438,7 +459,23 @@
       });
     });
 
-    // ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК =====
+    // ===== ПЕРЕКЛЮЧЕНИЕ ОСНОВНЫХ РАЗДЕЛОВ =====
+    function switchSection(section) {
+      const sections = document.querySelectorAll('.section-content');
+      const buttons = document.querySelectorAll('.nav-tab');
+      
+      sections.forEach(s => s.style.display = 'none');
+      buttons.forEach(b => b.classList.remove('active'));
+      
+      document.getElementById('section-' + section).style.display = 'block';
+      event.target.classList.add('active');
+      
+      if (section === 'calendar') {
+        renderCalendar();
+      }
+    }
+
+    // ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК АДМИНИСТРАТОРА =====
     function switchAdminTab(tab) {
       const tabs = document.querySelectorAll('.tab-content');
       const buttons = document.querySelectorAll('.tab-btn');
@@ -447,7 +484,6 @@
       document.getElementById('tab-' + tab).classList.add('active');
       event.target.classList.add('active');
       
-      if (tab === 'calendar') renderCalendar();
       if (tab === 'groups') refreshGroupsList();
     }
 
@@ -507,24 +543,38 @@
           document.getElementById('mainBox').style.display = 'block';
           document.getElementById('userInfo').textContent = `👤 ${username} (${role})`;
           
+          // СКРЫТИЕ ЭЛЕМЕНТОВ ДЛЯ УЧЕНИКОВ
           if (role === 'admin') {
-            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminNavBtn').style.display = 'block';
+            document.getElementById('statsPanel').style.display = 'block';
+            document.getElementById('adminMaterialsForm').style.display = 'block';
             document.getElementById('newsAdminBtn').style.display = 'block';
             document.getElementById('guidesAdminBtn').style.display = 'block';
             document.getElementById('testsAdminBtn').style.display = 'block';
-            document.getElementById('statsPanel').style.display = 'block';
+            document.getElementById('calendarAdminForm').style.display = 'block';
             document.getElementById('themeSel').value = localStorage.getItem('theme') || 'light';
             loadStats();
             refreshGroupsList();
-            renderCalendar();
+          } else {
+            // Ученик - скрываем админ функции
+            document.getElementById('adminNavBtn').style.display = 'none';
+            document.getElementById('statsPanel').style.display = 'none';
+            document.getElementById('adminMaterialsForm').style.display = 'none';
+            document.getElementById('newsAdminBtn').style.display = 'none';
+            document.getElementById('guidesAdminBtn').style.display = 'none';
+            document.getElementById('testsAdminBtn').style.display = 'none';
+            document.getElementById('calendarAdminForm').style.display = 'none';
           }
           
           refreshNotes();
           refreshNews();
           refreshGuides();
           refreshTests();
-          loadUsersList();
           loadNotifications();
+          
+          if (role === 'admin') {
+            loadUsersList();
+          }
         } else {
           document.getElementById('loginError').textContent = data.error || 'Ошибка входа';
         }
@@ -773,9 +823,7 @@
               <span>${new Date(item.created_at).toLocaleDateString('ru-RU')}</span>
             </div>
             ${role === 'admin' ? `
-              <div class="btn-group" style="margin-top:8px">
-                <button class="btn small danger" onclick="deleteNews(${idx})">🗑️ Удалить</button>
-              </div>
+              <button class="btn small danger" style="width:100%;margin-top:8px" onclick="deleteNews(${idx})">🗑️ Удалить</button>
             ` : ''}
           </div>
         `).join('');
@@ -1433,6 +1481,23 @@
         `).join('');
       } catch (e) {
         console.log('Ошибка загрузки результатов');
+      }
+    }
+
+    async function deleteTest(testId) {
+      if (!confirm('Удалить тест?')) return;
+      try {
+        const response = await fetch(API + '/admin/tests/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: testId, admin_login: current, admin_password: currentPass })
+        });
+        if (response.ok) {
+          alert('Тест удален!');
+          refreshTests();
+        }
+      } catch (e) {
+        alert('Ошибка');
       }
     }
   </script>
