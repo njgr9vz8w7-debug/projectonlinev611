@@ -89,15 +89,16 @@
     .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:16px}
     .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
     .calendar-day-header{background:var(--input-bg);padding:12px;text-align:center;font-weight:600;font-size:12px;border-radius:8px}
-    .calendar-day{background:var(--input-bg);padding:12px;border-radius:8px;min-height:80px;border:1px solid var(--input-border);cursor:pointer;transition:all 0.2s}
+    .calendar-day{background:var(--input-bg);padding:12px;border-radius:8px;min-height:100px;border:1px solid var(--input-border);cursor:pointer;transition:all 0.2s;overflow-y:auto}
     .calendar-day:hover{background:rgba(11,94,168,0.1);border-color:var(--primary)}
     .calendar-day.other-month{opacity:0.5}
-    .calendar-day-number{font-weight:600;color:var(--primary);margin-bottom:4px}
-    .calendar-event{font-size:10px;background:rgba(11,94,168,0.2);color:var(--primary);padding:2px 4px;border-radius:3px;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .calendar-day-number{font-weight:600;color:var(--primary);margin-bottom:6px;font-size:14px}
+    .calendar-event{font-size:10px;background:rgba(11,94,168,0.2);color:var(--primary);padding:3px 5px;border-radius:3px;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:background 0.2s}
+    .calendar-event:hover{background:rgba(11,94,168,0.4)}
     .nav-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;border-bottom:2px solid var(--input-border);padding-bottom:12px}
     .nav-tab{background:none;border:none;padding:8px 16px;color:var(--muted);cursor:pointer;font-weight:500;border-bottom:3px solid transparent;transition:all 0.2s;margin-bottom:-14px}
     .nav-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
-    @media(max-width:720px){.note-grid{grid-template-columns:repeat(1,1fr)}.modal-container{padding:20px}.header-controls{flex-direction:column;width:100%}.stat-box{min-width:unset}.calendar-grid{grid-template-columns:repeat(7,1fr);gap:4px}.calendar-day{padding:8px;min-height:60px}.calendar-day-number{font-size:12px}}
+    @media(max-width:720px){.note-grid{grid-template-columns:repeat(1,1fr)}.modal-container{padding:20px}.header-controls{flex-direction:column;width:100%}.stat-box{min-width:unset}.calendar-grid{grid-template-columns:repeat(7,1fr);gap:4px}.calendar-day{min-height:80px;padding:8px;font-size:12px}}
   </style>
 </head>
 <body class="light-mode">
@@ -112,6 +113,7 @@
         </div>
         <button id="themeToggle" class="btn ghost" title="Переключить тему">🌙</button>
         <div id="userInfo" class="small"></div>
+        <button id="logoutBtn" class="btn ghost" style="display:none">🚪 Выйти</button>
       </div>
     </header>
 
@@ -162,10 +164,7 @@
 
         <!-- МАТЕРИАЛЫ -->
         <div class="card notes">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-            <h3>📄 Материалы</h3>
-            <button id="logoutBtn" class="btn ghost">🚪 Выйти</button>
-          </div>
+          <h3>📄 Материалы</h3>
           <div id="adminMaterialsForm" style="display:none">
             <input id="title" placeholder="Название материала">
             <textarea id="desc" placeholder="Краткое описание"></textarea>
@@ -263,6 +262,15 @@
               <button id="refreshCalendarBtn" class="btn ghost" style="flex:1">🔄 Обновить</button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- МОДАЛЬНОЕ ОКНО СОБЫТИЯ КАЛЕНДАРЯ -->
+      <div id="eventModal" class="modal">
+        <div class="modal-container">
+          <button class="close-btn" onclick="closeEventModal()">✕</button>
+          <h2 id="eventModalTitle">Событие</h2>
+          <div id="eventModalContent"></div>
         </div>
       </div>
 
@@ -418,6 +426,7 @@
     let notifications = [], unreadCount = 0;
     let currentCalendarMonth = new Date().getMonth(), currentCalendarYear = new Date().getFullYear();
     let groups = [];
+    let calendarEvents = [];
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', () => {
@@ -541,6 +550,7 @@
           
           document.getElementById('loginBox').style.display = 'none';
           document.getElementById('mainBox').style.display = 'block';
+          document.getElementById('logoutBtn').style.display = 'inline-block';
           document.getElementById('userInfo').textContent = `👤 ${username} (${role})`;
           
           // СКРЫТИЕ ЭЛЕМЕНТОВ ДЛЯ УЧЕНИКОВ
@@ -586,6 +596,7 @@
     function logout() {
       document.getElementById('mainBox').style.display = 'none';
       document.getElementById('loginBox').style.display = 'block';
+      document.getElementById('logoutBtn').style.display = 'none';
       document.getElementById('login').value = '';
       document.getElementById('password').value = '';
       document.getElementById('loginError').textContent = '';
@@ -998,32 +1009,39 @@
         q,
         type: 'single',
         choices: [choice1, choice2, choice3].filter(c => c),
-        answers
+        answers: answers.length > 0 ? answers : [choice1]
       });
 
-      renderWizardQuestions();
+      updateWizardQuestionsDisplay();
     }
 
-    function renderWizardQuestions() {
+    function updateWizardQuestionsDisplay() {
       const list = document.getElementById('questionsListWiz');
-      list.innerHTML = wizardQuestions.map((q, i) => `
-        <div style="padding:8px;background:var(--input-bg);border-radius:4px;margin-bottom:8px">
-          <strong>${i + 1}. ${q.q}</strong><br>
-          <small>Варианты: ${q.choices.join(', ')}</small><br>
-          <small style="color:var(--success)">✓ ${q.answers.join(', ')}</small>
-          <button class="btn small danger" style="float:right" onclick="removeQuestion(${i})">✕</button>
+      if (wizardQuestions.length === 0) {
+        list.innerHTML = '<p style="color:var(--muted);text-align:center">Вопросы не добавлены</p>';
+        return;
+      }
+
+      list.innerHTML = wizardQuestions.map((q, idx) => `
+        <div style="padding:8px;background:rgba(11,94,168,0.05);margin-bottom:6px;border-radius:4px;border-left:3px solid var(--primary)">
+          <strong>${idx + 1}. ${q.q}</strong><br>
+          <small style="color:var(--muted)">Варианты: ${q.choices.join(', ')}</small><br>
+          <button class="btn small ghost" style="margin-top:4px" onclick="removeWizardQuestion(${idx})">🗑️ Удалить</button>
         </div>
       `).join('');
     }
 
-    function removeQuestion(idx) {
+    function removeWizardQuestion(idx) {
       wizardQuestions.splice(idx, 1);
-      renderWizardQuestions();
+      updateWizardQuestionsDisplay();
     }
 
     async function finishTestCreation() {
-      if (wizardQuestions.length === 0) {
-        alert('Добавьте хотя бы один вопрос');
+      const title = document.getElementById('wizTestTitle').value;
+      const desc = document.getElementById('wizTestDesc').value;
+
+      if (!title || wizardQuestions.length === 0) {
+        alert('Заполните название и добавьте вопросы');
         return;
       }
 
@@ -1033,9 +1051,10 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             test: {
-              title: document.getElementById('wizTestTitle').value,
-              description: document.getElementById('wizTestDesc').value,
-              questions: wizardQuestions
+              title,
+              desc,
+              questions: wizardQuestions,
+              created_at: new Date().toISOString()
             },
             admin_login: current,
             admin_password: currentPass
@@ -1048,101 +1067,64 @@
           refreshTests();
         }
       } catch (e) {
-        alert('Ошибка создания теста');
+        alert('Ошибка при создании теста');
       }
     }
 
-    async function startTest(idx) {
-      try {
-        const response = await fetch(API + '/tests');
-        const tests = await response.json();
-        const test = tests[idx];
+    let currentTestIndex = 0;
 
-        currentTestData = test;
-        currentQuestionIndex = 0;
-        testAnswers = new Array(test.questions.length).fill(null);
-        testStartTime = Date.now();
-
-        document.getElementById('testModalTitle').textContent = test.title;
-        document.getElementById('totalQuestions').textContent = test.questions.length;
-        document.getElementById('testResultContainer').style.display = 'none';
-        document.getElementById('testModal').classList.add('active');
-
-        showTestQuestion();
-      } catch (e) {
-        alert('Ошибка загрузки теста');
-      }
+    function startTest(idx) {
+      currentTestIndex = idx;
+      const tests = document.querySelectorAll('.note-card');
+      currentTestData = JSON.parse(JSON.stringify(tests[idx].dataset));
+      
+      fetch(API + '/tests')
+        .then(r => r.json())
+        .then(data => {
+          currentTestData = data[idx];
+          currentQuestionIndex = 0;
+          testAnswers = new Array(currentTestData.questions.length).fill(null);
+          testStartTime = Date.now();
+          showTestQuestion();
+          document.getElementById('testModal').classList.add('active');
+        });
     }
 
     function showTestQuestion() {
-      const q = currentTestData.questions[currentQuestionIndex];
-      const content = document.getElementById('testContent');
-
+      const question = currentTestData.questions[currentQuestionIndex];
+      const totalQuestions = currentTestData.questions.length;
+      
+      document.getElementById('testModalTitle').textContent = currentTestData.title;
       document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
-      const progress = ((currentQuestionIndex + 1) / currentTestData.questions.length) * 100;
-      document.getElementById('testProgressFill').style.width = progress + '%';
+      document.getElementById('totalQuestions').textContent = totalQuestions;
+      document.getElementById('testProgressFill').style.width = ((currentQuestionIndex + 1) / totalQuestions * 100) + '%';
+      
+      let questionHtml = `
+        <div style="padding:20px">
+          <h3>${question.q}</h3>
+      `;
 
-      let html = `<div style="padding:24px">
-        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:16px">
-          Вопрос ${currentQuestionIndex + 1} из ${currentTestData.questions.length}
-        </div>
-        <h3 style="margin:0 0 16px 0">${q.q}</h3>`;
-
-      if (q.image) {
-        html += `<img src="${q.image}" style="max-width:100%;border-radius:8px;margin:16px 0">`;
-      }
-
-      if (q.type === 'multiple') {
-        html += '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">';
-        q.choices.forEach((choice, i) => {
-          const isSelected = testAnswers[currentQuestionIndex]?.includes(i);
-          html += `
-            <label style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid var(--input-border);border-radius:8px;cursor:pointer;transition:all 0.2s;${isSelected ? 'border-color:var(--primary)' : ''}">
-              <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="handleMultipleChoice(${i})">
-              <span>${choice}</span>
+      if (question.type === 'single' || question.type === 'multiple') {
+        questionHtml += '<div>';
+        question.choices.forEach((choice, idx) => {
+          const checked = testAnswers[currentQuestionIndex] === choice ? 'checked' : '';
+          questionHtml += `
+            <label style="display:block;margin:10px 0;cursor:pointer">
+              <input type="radio" name="answer" value="${choice}" ${checked} onchange="testAnswers[${currentQuestionIndex}] = this.value">
+              ${choice}
             </label>
           `;
         });
-        html += '</div>';
-      } else {
-        html += '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">';
-        q.choices.forEach((choice, i) => {
-          const isSelected = testAnswers[currentQuestionIndex] === i;
-          html += `
-            <label style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid var(--input-border);border-radius:8px;cursor:pointer;transition:all 0.2s;${isSelected ? 'border-color:var(--primary)' : ''}">
-              <input type="radio" name="q${currentQuestionIndex}" ${isSelected ? 'checked' : ''} onchange="handleSingleChoice(${i})">
-              <span>${choice}</span>
-            </label>
-          `;
-        });
-        html += '</div>';
+        questionHtml += '</div>';
       }
 
-      html += '</div>';
-      content.innerHTML = html;
-
+      questionHtml += '</div>';
+      
+      document.getElementById('testContent').innerHTML = questionHtml;
+      
       document.getElementById('prevBtn').style.display = currentQuestionIndex > 0 ? 'block' : 'none';
-      document.getElementById('nextBtn').style.display = currentQuestionIndex < currentTestData.questions.length - 1 ? 'block' : 'none';
-      document.getElementById('submitBtn').style.display = currentQuestionIndex === currentTestData.questions.length - 1 ? 'block' : 'none';
-    }
-
-    function handleSingleChoice(idx) {
-      testAnswers[currentQuestionIndex] = idx;
-    }
-
-    function handleMultipleChoice(idx) {
-      if (!testAnswers[currentQuestionIndex]) testAnswers[currentQuestionIndex] = [];
-      const arr = testAnswers[currentQuestionIndex];
-      const i = arr.indexOf(idx);
-      if (i > -1) arr.splice(i, 1);
-      else arr.push(idx);
-    }
-
-    function nextQuestion() {
-      if (currentQuestionIndex < currentTestData.questions.length - 1) {
-        currentQuestionIndex++;
-        showTestQuestion();
-      }
+      document.getElementById('nextBtn').style.display = currentQuestionIndex < totalQuestions - 1 ? 'block' : 'none';
+      document.getElementById('submitBtn').style.display = currentQuestionIndex === totalQuestions - 1 ? 'block' : 'none';
     }
 
     function prevQuestion() {
@@ -1152,40 +1134,243 @@
       }
     }
 
-    function submitTest() {
-      const score = calculateTestScore();
-      const html = `<strong>Ваш результат: ${score.correct} / ${score.total}</strong><br>Процент правильных ответов: ${Math.round(score.correct / score.total * 100)}%`;
-      document.getElementById('testScore').textContent = Math.round(score.correct / score.total * 100) + '%';
-      document.getElementById('testDetails').innerHTML = html;
-      document.getElementById('testContent').style.display = 'none';
-      document.getElementById('testResultContainer').style.display = 'block';
-      document.getElementById('prevBtn').style.display = 'none';
-      document.getElementById('nextBtn').style.display = 'none';
-      document.getElementById('submitBtn').style.display = 'none';
-    }
-
-    function calculateTestScore() {
-      let correct = 0;
-      currentTestData.questions.forEach((q, i) => {
-        if (q.type === 'single') {
-          if (testAnswers[i] === q.answers[0]) correct++;
-        }
-      });
-      return { correct, total: currentTestData.questions.length };
+    function nextQuestion() {
+      if (currentQuestionIndex < currentTestData.questions.length - 1) {
+        currentQuestionIndex++;
+        showTestQuestion();
+      }
     }
 
     function closeTestModal() {
       document.getElementById('testModal').classList.remove('active');
     }
 
-    // ===== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ =====
+    async function submitTest() {
+      const timeSpent = Math.floor((Date.now() - testStartTime) / 1000);
+
+      try {
+        const response = await fetch(API + '/tests/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            test_id: currentTestData.id,
+            answers: testAnswers,
+            user: current,
+            time_spent: timeSpent
+          })
+        });
+
+        const result = await response.json();
+        displayTestResults(result);
+      } catch (e) {
+        alert('Ошибка при отправке теста');
+      }
+    }
+
+    function displayTestResults(result) {
+      document.getElementById('testContent').style.display = 'none';
+      document.getElementById('testResultContainer').style.display = 'block';
+      document.getElementById('testScore').textContent = `${result.score}/${result.total} (${result.percentage}%)`;
+      
+      let details = '<h4>Результаты по вопросам:</h4><div style="text-align:left">';
+      result.details.forEach((d, idx) => {
+        details += `
+          <div style="margin:10px 0;padding:10px;background:${d.correct ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.1)'};border-radius:6px">
+            <strong>Вопрос ${d.question}: ${d.correct ? '✅ Правильно' : '❌ Неправильно'}</strong><br>
+            <small>Ваш ответ: ${d.user_answer || 'Не указан'}</small><br>
+            <small style="color:var(--success)">Правильный: ${d.correct_answer.join(', ')}</small>
+          </div>
+        `;
+      });
+      details += '</div>';
+      document.getElementById('testDetails').innerHTML = details;
+      
+      document.getElementById('prevBtn').style.display = 'none';
+      document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'none';
+    }
+
+    // ===== КАЛЕНДАРЬ =====
+    async function renderCalendar() {
+      const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                         'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+      
+      document.getElementById('monthYear').textContent = `${monthNames[currentCalendarMonth]} ${currentCalendarYear}`;
+
+      // Загруженные события для текущего месяца
+      try {
+        const response = await fetch(API + `/calendar/${currentCalendarYear}/${currentCalendarMonth + 1}`);
+        calendarEvents = await response.json();
+      } catch (e) {
+        calendarEvents = [];
+      }
+
+      const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+      const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+      const daysInPrevMonth = new Date(currentCalendarYear, currentCalendarMonth, 0).getDate();
+
+      let html = '';
+      let dayCounter = 1;
+
+      // Предыдущий месяц
+      for (let i = firstDay - 1; i >= 0; i--) {
+        html += `<div class="calendar-day other-month">${daysInPrevMonth - i}</div>`;
+      }
+
+      // Текущий месяц
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayEvents = calendarEvents.filter(e => 
+          e.day === day && e.month === (currentCalendarMonth + 1) && e.year === currentCalendarYear
+        );
+
+        const eventsHtml = dayEvents.map(e => 
+          `<div class="calendar-event" onclick="showEventDetails(${JSON.stringify(e).replace(/"/g, '&quot;')})">${e.title}</div>`
+        ).join('');
+
+        html += `
+          <div class="calendar-day" onclick="selectDay(${day})">
+            <div class="calendar-day-number">${day}</div>
+            ${eventsHtml}
+          </div>
+        `;
+      }
+
+      // Следующий месяц
+      const remainingDays = 42 - (firstDay - 1 + daysInMonth);
+      for (let i = 1; i <= remainingDays; i++) {
+        html += `<div class="calendar-day other-month">${i}</div>`;
+      }
+
+      document.getElementById('calendarGrid').innerHTML = html;
+
+      // Заполнить select групп для админа
+      if (role === 'admin') {
+        try {
+          const response = await fetch(API + '/admin/groups/list', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admin_login: current, admin_password: currentPass })
+          });
+          const groupsData = await response.json();
+          const select = document.getElementById('eventGroup');
+          select.innerHTML = '<option value="">-- Для всех --</option>';
+          Object.keys(groupsData).forEach(groupName => {
+            select.innerHTML += `<option value="${groupName}">${groupName}</option>`;
+          });
+        } catch (e) {
+          console.log('Ошибка загрузки групп');
+        }
+      }
+    }
+
+    function selectDay(day) {
+      if (role === 'admin') {
+        const date = new Date(currentCalendarYear, currentCalendarMonth, day);
+        document.getElementById('eventDate').valueAsDate = date;
+      }
+    }
+
+    function showEventDetails(event) {
+      document.getElementById('eventModalTitle').textContent = `📅 ${event.title}`;
+      document.getElementById('eventModalContent').innerHTML = `
+        <p><strong>Тип:</strong> ${event.type}</p>
+        <p><strong>Дата:</strong> ${event.day}.${event.month}.${event.year}</p>
+        <p><strong>Описание:</strong> ${event.desc || 'Нет описания'}</p>
+        ${event.group ? `<p><strong>Группа:</strong> ${event.group}</p>` : ''}
+        ${role === 'admin' ? `<button class="btn danger" onclick="deleteCalendarEvent(${event.id})">🗑️ Удалить</button>` : ''}
+      `;
+      document.getElementById('eventModal').classList.add('active');
+    }
+
+    function closeEventModal() {
+      document.getElementById('eventModal').classList.remove('active');
+    }
+
+    async function addCalendarEvent() {
+      const dateInput = document.getElementById('eventDate').value;
+      const title = document.getElementById('eventTitle').value;
+      const type = document.getElementById('eventType').value;
+      const group = document.getElementById('eventGroup').value;
+
+      if (!dateInput || !title) {
+        alert('Заполните все поля');
+        return;
+      }
+
+      const date = new Date(dateInput);
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+
+      try {
+        const response = await fetch(API + '/admin/calendar/add_event_group', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            day,
+            month,
+            year,
+            type,
+            group: group || null,
+            admin_login: current,
+            admin_password: currentPass
+          })
+        });
+
+        if (response.ok) {
+          alert('Событие добавлено!');
+          document.getElementById('eventDate').value = '';
+          document.getElementById('eventTitle').value = '';
+          renderCalendar();
+        }
+      } catch (e) {
+        alert('Ошибка при добавлении события');
+      }
+    }
+
+    async function deleteCalendarEvent(eventId) {
+      if (!confirm('Удалить событие?')) return;
+
+      try {
+        const response = await fetch(API + `/calendar/delete_event/${eventId}`, { method: 'POST' });
+        if (response.ok) {
+          closeEventModal();
+          renderCalendar();
+        }
+      } catch (e) {
+        alert('Ошибка');
+      }
+    }
+
+    function prevMonth() {
+      if (currentCalendarMonth === 0) {
+        currentCalendarMonth = 11;
+        currentCalendarYear--;
+      } else {
+        currentCalendarMonth--;
+      }
+      renderCalendar();
+    }
+
+    function nextMonth() {
+      if (currentCalendarMonth === 11) {
+        currentCalendarMonth = 0;
+        currentCalendarYear++;
+      } else {
+        currentCalendarMonth++;
+      }
+      renderCalendar();
+    }
+
+    // ===== АДМИНИСТРАТОР =====
     async function saveUser() {
       const login = document.getElementById('u_login').value;
-      const pass = document.getElementById('u_pass').value;
-      const userRole = document.getElementById('u_role').value;
-      
-      if (!login || !pass) {
-        alert('Заполните логин и пароль');
+      const password = document.getElementById('u_pass').value;
+      const role = document.getElementById('u_role').value;
+
+      if (!login) {
+        alert('Заполните логин');
         return;
       }
 
@@ -1193,8 +1378,13 @@
         const response = await fetch(API + '/admin/users/add_or_update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ login, password: pass, role: userRole, admin_login: current, admin_password: currentPass })
+          body: JSON.stringify({
+            login, password, role,
+            admin_login: current,
+            admin_password: currentPass
+          })
         });
+
         if (response.ok) {
           alert('Пользователь сохранен!');
           document.getElementById('u_login').value = '';
@@ -1208,6 +1398,7 @@
 
     async function deleteUser() {
       const login = document.getElementById('del_login').value;
+
       if (!login) {
         alert('Введите логин');
         return;
@@ -1217,15 +1408,21 @@
         const response = await fetch(API + '/admin/users/delete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ login, admin_login: current, admin_password: currentPass })
+          body: JSON.stringify({
+            login,
+            admin_login: current,
+            admin_password: currentPass
+          })
         });
+
         if (response.ok) {
           alert('Пользователь удален!');
           document.getElementById('del_login').value = '';
           loadUsersList();
         }
       } catch (e) {
-        alert('Ошибка');
+        const error = e;
+        alert(error);
       }
     }
 
@@ -1234,19 +1431,34 @@
         const response = await fetch(API + '/admin/users/list', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ admin_login: current, admin_password: currentPass })
+          body: JSON.stringify({
+            admin_login: current,
+            admin_password: currentPass
+          })
         });
+
         const users = await response.json();
         const list = document.getElementById('usersList');
-        list.innerHTML = Object.entries(users).map(([k, v]) => `<strong>${k}</strong> (${v.role})<br>`).join('');
+        const userEntries = Object.entries(users);
+
+        if (userEntries.length === 0) {
+          list.innerHTML = 'Пользователей нет';
+          return;
+        }
+
+        list.innerHTML = userEntries.map(([login, userData]) => `
+          <div style="padding:8px;border-bottom:1px solid var(--input-border)">
+            <strong>${login}</strong> - ${userData.role} ${userData.group ? `(${userData.group})` : ''}
+          </div>
+        `).join('');
       } catch (e) {
         console.log('Ошибка загрузки пользователей');
       }
     }
 
-    // ===== УПРАВЛЕНИЕ ГРУППАМИ =====
     async function createGroup() {
       const name = document.getElementById('groupName').value;
+
       if (!name) {
         alert('Введите название группы');
         return;
@@ -1256,8 +1468,13 @@
         const response = await fetch(API + '/admin/groups/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, admin_login: current, admin_password: currentPass })
+          body: JSON.stringify({
+            name,
+            admin_login: current,
+            admin_password: currentPass
+          })
         });
+
         if (response.ok) {
           alert('Группа создана!');
           document.getElementById('groupName').value = '';
@@ -1273,67 +1490,47 @@
         const response = await fetch(API + '/admin/groups/list', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ admin_login: current, admin_password: currentPass })
+          body: JSON.stringify({
+            admin_login: current,
+            admin_password: currentPass
+          })
         });
+
         const groupsData = await response.json();
-        groups = Array.isArray(groupsData) ? groupsData : Object.entries(groupsData).map(([k, v]) => ({ ...v, name: k }));
-        
         const list = document.getElementById('groupsList');
-        if (groups.length === 0) {
-          list.innerHTML = '<p>Групп еще нет</p>';
-        } else {
-          list.innerHTML = groups.map((g, i) => `
-            <div style="padding:8px;background:var(--input-bg);border-radius:4px;margin-bottom:8px">
-              <strong>👨‍👩‍👧‍👦 ${g.name}</strong><br>
-              <small>Членов: ${g.members?.length || 0}</small><br>
-              <button class="btn small ghost" onclick="editGroupMembers(${i})">Управление</button>
-              <button class="btn small danger" onclick="deleteGroup(${i})">Удалить</button>
-            </div>
-          `).join('');
+        const groupEntries = Object.entries(groupsData);
+
+        if (groupEntries.length === 0) {
+          list.innerHTML = 'Групп нет';
+          return;
         }
-        
-        const eventGroup = document.getElementById('eventGroup');
-        eventGroup.innerHTML = '<option value="">-- Для всех --</option>' + groups.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+
+        list.innerHTML = groupEntries.map(([groupName, groupData]) => `
+          <div style="padding:8px;border-bottom:1px solid var(--input-border)">
+            <strong>${groupName}</strong> - ${groupData.members?.length || 0} участников
+            <button class="btn small danger" style="float:right" onclick="deleteGroup('${groupName}')">🗑️</button>
+          </div>
+        `).join('');
       } catch (e) {
         console.log('Ошибка загрузки групп');
       }
     }
 
-    function editGroupMembers(idx) {
-      const group = groups[idx];
-      const member = prompt(`Группа: ${group.name}\nТекущие члены: ${group.members?.join(', ') || 'нет'}\n\nВведите логин ученика для добавления:`);
-      if (!member) return;
+    async function deleteGroup(groupName) {
+      if (!confirm(`Удалить группу ${groupName}?`)) return;
 
-      addGroupMember(group.name, member);
-    }
-
-    async function addGroupMember(groupName, memberLogin) {
-      try {
-        const response = await fetch(API + '/admin/groups/add_member', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ group: groupName, username: memberLogin, admin_login: current, admin_password: currentPass })
-        });
-        if (response.ok) {
-          alert('Ученик добавлен в группу!');
-          refreshGroupsList();
-        }
-      } catch (e) {
-        alert('Ошибка');
-      }
-    }
-
-    async function deleteGroup(idx) {
-      if (!confirm('Удалить группу?')) return;
-      const group = groups[idx];
       try {
         const response = await fetch(API + '/admin/groups/delete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ group: group.name, admin_login: current, admin_password: currentPass })
+          body: JSON.stringify({
+            group: groupName,
+            admin_login: current,
+            admin_password: currentPass
+          })
         });
+
         if (response.ok) {
-          alert('Группа удалена!');
           refreshGroupsList();
         }
       } catch (e) {
@@ -1341,121 +1538,48 @@
       }
     }
 
-    // ===== КАЛЕНДАРЬ =====
-    function renderCalendar() {
-      const year = currentCalendarYear;
-      const month = currentCalendarMonth;
-      
-      const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-      document.getElementById('monthYear').textContent = monthNames[month] + ' ' + year;
-
-      const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const daysInPrevMonth = new Date(year, month, 0).getDate();
-
-      let html = '';
-      
-      for (let i = (firstDay === 0 ? 6 : firstDay - 1); i > 0; i--) {
-        html += `<div class="calendar-day other-month"><div class="calendar-day-number">${daysInPrevMonth - i + 1}</div></div>`;
-      }
-      
-      for (let i = 1; i <= daysInMonth; i++) {
-        const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(i).padStart(2, '0');
-        html += `<div class="calendar-day" onclick="selectCalendarDate('${dateStr}')"><div class="calendar-day-number">${i}</div></div>`;
-      }
-      
-      const totalCells = Math.ceil((firstDay === 0 ? 6 : firstDay - 1 + daysInMonth) / 7) * 7;
-      for (let i = 1; i <= totalCells - (firstDay === 0 ? 6 : firstDay - 1) - daysInMonth; i++) {
-        html += `<div class="calendar-day other-month"><div class="calendar-day-number">${i}</div></div>`;
-      }
-      
-      document.getElementById('calendarGrid').innerHTML = html;
-    }
-
-    function prevMonth() {
-      currentCalendarMonth--;
-      if (currentCalendarMonth < 0) {
-        currentCalendarMonth = 11;
-        currentCalendarYear--;
-      }
-      renderCalendar();
-    }
-
-    function nextMonth() {
-      currentCalendarMonth++;
-      if (currentCalendarMonth > 11) {
-        currentCalendarMonth = 0;
-        currentCalendarYear++;
-      }
-      renderCalendar();
-    }
-
-    function selectCalendarDate(dateStr) {
-      document.getElementById('eventDate').value = dateStr;
-    }
-
-    async function addCalendarEvent() {
-      const dateStr = document.getElementById('eventDate').value;
-      const title = document.getElementById('eventTitle').value;
-      const type = document.getElementById('eventType').value;
-      const groupName = document.getElementById('eventGroup').value;
-
-      if (!dateStr || !title) {
-        alert('Заполните дату и название события');
-        return;
-      }
-
-      const [year, month, day] = dateStr.split('-');
-
-      try {
-        const endpoint = groupName ? '/admin/calendar/add_event_group' : '/calendar/add_event';
-        const body = groupName 
-          ? { group: groupName, title, type, year: parseInt(year), month: parseInt(month), day: parseInt(day), admin_login: current, admin_password: currentPass }
-          : { user: current, title, type, year: parseInt(year), month: parseInt(month), day: parseInt(day) };
-
-        const response = await fetch(API + endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        
-        if (response.ok) {
-          alert('Событие добавлено!');
-          document.getElementById('eventDate').value = '';
-          document.getElementById('eventTitle').value = '';
-          renderCalendar();
-        }
-      } catch (e) {
-        alert('Ошибка');
-      }
-    }
-
-    // ===== СТАТИСТИКА И РЕЗУЛЬТАТЫ =====
     async function loadStats() {
       try {
         const response = await fetch(API + '/admin/analytics/stats', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ admin_login: current, admin_password: currentPass })
+          body: JSON.stringify({
+            admin_login: current,
+            admin_password: currentPass
+          })
         });
+
         const stats = await response.json();
-        const grid = document.getElementById('statsGrid');
-        grid.innerHTML = `
+        const statsGrid = document.getElementById('statsGrid');
+
+        statsGrid.innerHTML = `
           <div class="stat-box">
-            <div class="stat-number">${stats.users || 0}</div>
+            <div class="stat-number">${stats.users}</div>
             <div class="stat-label">Пользователей</div>
           </div>
           <div class="stat-box">
-            <div class="stat-number">${stats.groups || 0}</div>
+            <div class="stat-number">${stats.groups}</div>
             <div class="stat-label">Групп</div>
           </div>
           <div class="stat-box">
-            <div class="stat-number">${stats.materials || 0}</div>
+            <div class="stat-number">${stats.tests}</div>
+            <div class="stat-label">Тестов</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${stats.completed_tests}</div>
+            <div class="stat-label">Пройдено</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${stats.average_score}%</div>
+            <div class="stat-label">Средний балл</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${stats.materials}</div>
             <div class="stat-label">Материалов</div>
           </div>
           <div class="stat-box">
-            <div class="stat-number">${stats.tests || 0}</div>
-            <div class="stat-label">Тестов</div>
+            <div class="stat-number">${stats.calendar_events}</div>
+            <div class="stat-label">Событий</div>
           </div>
         `;
       } catch (e) {
@@ -1468,37 +1592,45 @@
         const response = await fetch(API + '/admin/results', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ admin_login: current, admin_password: currentPass })
+          body: JSON.stringify({
+            admin_login: current,
+            admin_password: currentPass
+          })
         });
+
         const results = await response.json();
         const list = document.getElementById('resultsList');
+
         if (results.length === 0) {
-          list.innerHTML = '<p>Результатов еще нет</p>';
+          list.innerHTML = 'Результатов нет';
           return;
         }
-        list.innerHTML = results.map(r => `
-          <strong>${r.user}</strong>: Вопрос ${r.question || 'N/A'} - ${r.score || 0}/${r.total || 0}<br>
+
+        list.innerHTML = results.map((r, idx) => `
+          <div style="padding:8px;border-bottom:1px solid var(--input-border)">
+            <strong>${r.user}</strong> - Тест #${r.test_id}: ${r.score}/${r.total} (${r.percentage}%)
+            <small style="display:block;color:var(--muted)">${new Date(r.completed_at).toLocaleString('ru-RU')}</small>
+          </div>
         `).join('');
       } catch (e) {
         console.log('Ошибка загрузки результатов');
       }
     }
 
-    async function deleteTest(testId) {
+    function deleteTest(testId) {
       if (!confirm('Удалить тест?')) return;
-      try {
-        const response = await fetch(API + '/admin/tests/delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: testId, admin_login: current, admin_password: currentPass })
-        });
-        if (response.ok) {
-          alert('Тест удален!');
-          refreshTests();
-        }
-      } catch (e) {
-        alert('Ошибка');
-      }
+
+      fetch(API + '/admin/tests/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: testId,
+          admin_login: current,
+          admin_password: currentPass
+        })
+      }).then(r => {
+        if (r.ok) refreshTests();
+      });
     }
   </script>
 </body>
